@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Home{% endblock title %}
+{% block script %}
+<!--<script src="{% static 'js/main.js' %}" defer data-questions="{{questions}}">-->
+<script data-questions="{{questions}}">
+
+const startButton = document.getElementById('start-btn')
+const nextButton = document.getElementById('next-btn')
+const questionContainerElement = document.getElementById('question-container')
+const questionElement = document.getElementById('question')
+const answerBtn = document.getElementById('answer-buttons')
+
+let questions = "{{questions|escapejs}}"
+console.log(questions)
+
+questions = JSON.parse(questions.replace(/'/g, '"'))
+let results = []
+let currentQuestionIndex
+
+const startGame = () => {
+    console.log('start');
+    startButton.classList.add('hide')
+    currentQuestionIndex = 0
+    questionContainerElement.classList.remove('hide')
+    setNextQuestion()
+}
+
+const showQuestion = (question) => {
+    console.log(question)
+
+    questionElement.innerText = question.question
+    question.answers.forEach(answer => {
+        const button = document.createElement('button')
+        button.innerText = answer
+        button.classList.add('btn')
+        button.addEventListener('click', selectAnswer)
+        answerBtn.appendChild(button)
+    });
+}
+
+const resetState = () => {
+    clearStatusClass(document.body)
+    nextButton.classList.add('hide')
+    while (answerBtn.firstChild) {
+        answerBtn.removeChild(answerBtn.firstChild)
+    }
+}
+const setNextQuestion = () => {
+    resetState()
+    showQuestion(questions[currentQuestionIndex])
+}
+
+function getCookie(c_name)
+{
+    if (document.cookie.length > 0)
+    {
+        c_start = document.cookie.indexOf(c_name + "=");
+        if (c_start != -1)
+        {
+            c_start = c_start + c_name.length + 1;
+            c_end = document.cookie.indexOf(";", c_start);
+            if (c_end == -1) c_end = document.cookie.length;
+            return unescape(document.cookie.substring(c_start,c_end));
+        }
+    }
+    return "";
+ }
+
+const selectAnswer = (e) => {
+    const selectedBtn = e.target
+    results.push(selectedBtn.innerText)
+
+    if (questions.length > currentQuestionIndex + 1) {
+        nextButton.classList.remove('hide')
+    } else {
+        startButton.innerText = 'Send'
+        startButton.classList.remove('hide')
+        startButton.addEventListener('click', () => {
+            fetch(`${window.location.href}`, {
+                 headers: {
+                  headers: { "X-CSRFToken": getCookie("csrftoken") },
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    method: "POST",
+    body: JSON.stringify({results: results})
+            })
+        })
+    }
+    console.log('results', results)
+
+}
+
+
+
+const clearStatusClass = (element) => {
+    element.classList.remove('correct')
+    element.classList.remove('wrong')
+
+}
+
+startButton.addEventListener('click', startGame)
+nextButton.addEventListener('click', () => {
+    currentQuestionIndex++
+    setNextQuestion()
+})
+
+
+</script>
+{% endblock script %}
+
+
+{% block content %}
+{{result}}
+
+{{quiz}}
+
+<div class="container">
+    <div id="question-container" class="hide">
+      <div id="question">Question</div>
+      <div id="answer-buttons" class="btn-grid">
+        <button class="btn">Answer 1</button>
+        <button class="btn">Answer 2</button>
+        <button class="btn">Answer 3</button>
+        <button class="btn">Answer 4</button>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="start-btn" class="start-btn btn">Start</button>
+      <button id="next-btn" class="next-btn btn hide">Next</button>
+    </div>
+  </div>
+
+<!--{{questions}}-->
+<!--{% for question in questions %}-->
+<!--<h2>{{ question.question }}</h2>-->
+<!--{% for answer in question.answers %}-->
+<!--<div>-->
+<!--<input type="checkbox" value="{{answer.text}}"/> <label>{{answer.text}}</label>-->
+<!--</div>-->
+<!--{% endfor %}-->
+<!--<hr>-->
+<!--{% endfor %}-->
+
+<!--{% endblock content %}-->

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock title %}
+
+{% block content %}
+{% for quiz in quizes %}
+
+<a href="{% url 'quiz' quiz.category.pk quiz.pk %}">{{ quiz.title }}</a>
+
+{% endfor %}
+{% endblock content %}
